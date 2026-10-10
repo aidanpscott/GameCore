@@ -26,8 +26,6 @@ ChatQueue::~ChatQueue()
 	std::list<ChatQueueMessage>::iterator iter;
 	for (iter=ChatQueue_list.begin(); iter != ChatQueue_list.end(); iter++)
 	{     
-		if(iter->ChatQueue_memoryManaged == true)
-			delete iter->message;
 	}
 	ChatQueue_list.erase(ChatQueue_list.begin(),ChatQueue_list.end());
 }
@@ -45,7 +43,8 @@ void ChatQueue::addMessage(core::stringw text, SColor chatColor, SColor chatColo
 void ChatQueue::addMessage(const wchar_t* text, SColor chatColor, SColor chatColorShadow)
 {
 	ChatQueueMessage lmsg;
-	wcscpy(lmsg.message,text);
+	wcsncpy(lmsg.message,text,ChatQueue_STRINGLENGTH - 1);
+	lmsg.message[ChatQueue_STRINGLENGTH - 1] = L'\0';
 	lmsg.chatColor = chatColor;
 	lmsg.chatColorShadow = chatColorShadow;
 	lmsg.fade = 0;
@@ -72,8 +71,6 @@ void ChatQueue::draw()
 		{ 
 			//Max lines means no fade, special case delete
 			if(count > ChatQueue_maxLines){
-				if(iter->ChatQueue_memoryManaged == true)
-					delete iter->message;
 				ChatQueue_list.erase(iter,ChatQueue_list.end());
 				return;
 			}
@@ -94,8 +91,6 @@ void ChatQueue::draw()
 				}
 				if( ((l_time - iter->fade) >= ChatQueue_fadeTime) || !ChatQueue_fade )
 				{
-					if(iter->ChatQueue_memoryManaged == true)
-						delete iter->message;
 					ChatQueue_list.erase(iter,ChatQueue_list.end());
 					return;
 				}

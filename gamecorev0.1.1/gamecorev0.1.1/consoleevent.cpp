@@ -9,6 +9,7 @@
 
 
 #include"consoleevent.h"
+#include "InventoryScreen.h"
 
 using namespace irr;
 using namespace core;
@@ -27,7 +28,8 @@ consoleevent::consoleevent(irr::IrrlichtDevice *device, irr::gui::IGUIEnvironmen
 						   NPC* npc, mapLoader* currentMap, InternalServer* client):
 							device_(device),guienv_(guienv),driver_(driver),Context_(Context),gui_(gui),debug(false),							
 							pauseMenu(false), started(false), chatshown(false),creditsDisplayed(false), inventory(false), engine_(engine), 
-							player_(thePlayer), world_(world), npc_(npc), currentMap_(currentMap), client_(client)
+							player_(thePlayer), world_(world), npc_(npc), currentMap_(currentMap), client_(client),
+							inventoryScreen_(nullptr)
 {
 	//open up the file to get set up the coords
 	//coords.open("coords.txt");
@@ -47,6 +49,8 @@ consoleevent::~consoleevent(){ coords.close();}
 
 bool consoleevent::OnEvent(const irr::SEvent& event)
 {
+	if (inventory && inventoryScreen_ && inventoryScreen_->onEvent(event))
+		return true;
 
 	//test for our mouse events
 	if (event.EventType == irr::EET_MOUSE_INPUT_EVENT && !pauseMenu && !console.isVisible() )
@@ -60,18 +64,14 @@ bool consoleevent::OnEvent(const irr::SEvent& event)
 			{
 				//Iterate through the list of clues until we find the one the player is looking at
 				std::list<ClueObject*>::iterator obj = clueObjects_.begin();
-				ClueObject* clueHolder = *obj;
-				while(clueHolder->getModel()->getName() != player_->getSelectedNode()->getName() &&
-					  obj != clueObjects_.end())
-				{
+				while(obj != clueObjects_.end() &&
+					  (*obj)->getModel()->getName() != player_->getSelectedNode()->getName())
 					++obj;
-					clueHolder = *obj;
-				}
 
 				if (obj != clueObjects_.end())
 				{
-					player_->addClue(clueHolder);
-					clueHolder->eraseModelFromWorld();
+					player_->addClue(*obj);
+					(*obj)->eraseModelFromWorld();
 				}
 			}
 			
@@ -209,7 +209,11 @@ bool consoleevent::OnEvent(const irr::SEvent& event)
 		{
 			engine_->play2D("sounds/button-20.wav",false);
 			if (inventory)
+			{
 				inventory = false;
+				if (inventoryScreen_)
+					inventoryScreen_->close();
+			}
 			else
 			{
 				inventory = true;
@@ -377,14 +381,17 @@ void consoleevent::drawMainMenu()//draws the main menu for the game
 	driver_->draw2DImage(backgroundImage,position2d<s32>(0,0),rect<s32>(0,0,800,600));
 	//driver_->draw2DImage(titleImage,position2d<s32>(0,0),rect<s32>(0,0,424,127),NULL,SColor(255,255,255,255), true);
 
-	guienv_->addButton(rect<s32>(330,200,450,240), 0, GUI_ID_START,
-		L"Start", L"Starts the game");
-	guienv_->addButton(rect<s32>(330,260,450,300), 0, GUI_ID_OPTIONS,
-		L"Options", L"Adjust game settings");
-	guienv_->addButton(rect<s32>(330,320,450,360), 0, GUI_ID_CREDITS,
-		L"Credits", L"Click to see who made the game");
-	guienv_->addButton(rect<s32>(330,380,450,420), 0, GUI::GUI_ID_QUIT_BUTTON,
-		L"Exit", L"Exit to the Desktop");
+	if (!guienv_->getRootGUIElement()->getElementFromId(GUI_ID_CREDITS, true))
+	{
+		guienv_->addButton(rect<s32>(330,200,450,240), 0, GUI_ID_START,
+			L"Start", L"Starts the game");
+		guienv_->addButton(rect<s32>(330,260,450,300), 0, GUI_ID_OPTIONS,
+			L"Options", L"Adjust game settings");
+		guienv_->addButton(rect<s32>(330,320,450,360), 0, GUI_ID_CREDITS,
+			L"Credits", L"Click to see who made the game");
+		guienv_->addButton(rect<s32>(330,380,450,420), 0, GUI::GUI_ID_QUIT_BUTTON,
+			L"Exit", L"Exit to the Desktop");
+	}
 
 
 	//2 types of gui fonts
@@ -406,7 +413,11 @@ void consoleevent::drawMainMenu()//draws the main menu for the game
 void consoleevent::drawPauseMenu ()// render the pause menu 
 {
 	if (inventory)
+	{
 		inventory = false;
+		if (inventoryScreen_)
+			inventoryScreen_->close();
+	}
 	//guienv_->drawAll();
 
 	IGUISkin* skin = guienv_->getSkin();
@@ -418,14 +429,17 @@ void consoleevent::drawPauseMenu ()// render the pause menu
 	ITexture* titleImage = driver_->getTexture("bill/pauselogo.png");
 	driver_->draw2DImage(titleImage,position2d<s32>(290,150),rect<s32>(0,0,240,38),NULL,SColor(255,255,255,255), true);
 
-	guienv_->addButton(rect<s32>(350,285,470,315), 0, GUI_ID_RESUME,
-		L"Resume", L"Unpauses the game");
-	guienv_->addButton(rect<s32>(350,325,470,355), 0, GUI_ID_PAUSE_OPTIONS,
-		L"Options", L"Set up game things");
-	guienv_->addButton(rect<s32>(350,365,470,395), 0, GUI_ID_GOTO_MAIN_MENU,
-		L"Main Menu", L"Goes back to the main menu");
-	guienv_->addButton(rect<s32>(350,405,470,435), 0, GUI::GUI_ID_QUIT_BUTTON,
-		L"Quit", L"Exits Program");
+	if (!guienv_->getRootGUIElement()->getElementFromId(GUI_ID_GOTO_MAIN_MENU, true))
+	{
+		guienv_->addButton(rect<s32>(350,285,470,315), 0, GUI_ID_RESUME,
+			L"Resume", L"Unpauses the game");
+		guienv_->addButton(rect<s32>(350,325,470,355), 0, GUI_ID_PAUSE_OPTIONS,
+			L"Options", L"Set up game things");
+		guienv_->addButton(rect<s32>(350,365,470,395), 0, GUI_ID_GOTO_MAIN_MENU,
+			L"Main Menu", L"Goes back to the main menu");
+		guienv_->addButton(rect<s32>(350,405,470,435), 0, GUI::GUI_ID_QUIT_BUTTON,
+			L"Quit", L"Exits Program");
+	}
 
 		//2 types of gui fonts
 	gui::IGUIFont* font = device_->getGUIEnvironment()->getBuiltInFont();
@@ -441,55 +455,9 @@ void consoleevent::drawPauseMenu ()// render the pause menu
 
 void consoleevent::drawInventory ()
 {
-	const int menuWidth = 700; 
-
-	const int clueBoxSpace = 10;
-	const int clueBoxSize = 50;
-
-	int boxVertPos = 300;
-	int boxHorzPos = 80;
-
-	driver_->draw2DRectangle(SColor(150,0,0,0),rect<s32>(50,50, 50+menuWidth,500));
-
-	driver_->draw2DRectangle(SColor(255, 30, 30, 30),rect<s32>(70,70, 270,480));
-
-	//This loop draws three boxes for the players equipped items
-	for (int i = 0; i < 3; ++i)
-	{
-		driver_->draw2DRectangle(SColor(255, 80, 80, 80),rect<s32>(boxHorzPos,boxVertPos, boxHorzPos+clueBoxSize, boxVertPos+clueBoxSize));
-		if (player_->getFoundClues().size() > i)
-			driver_->draw2DRectangle(SColor(255,200,50,50),rect<s32>(boxHorzPos+CLUE_DRAW_OFFSET,boxVertPos+CLUE_DRAW_OFFSET, 
-															boxHorzPos+clueBoxSize-CLUE_DRAW_OFFSET, boxVertPos+clueBoxSize-CLUE_DRAW_OFFSET));
-		boxVertPos = (boxVertPos+clueBoxSize) + clueBoxSpace;
-		boxHorzPos = (boxHorzPos+clueBoxSize) + clueBoxSpace;
-	}
-
-	// This loop draws all of the positions for the inventory items
-	boxVertPos = 180;
-	boxHorzPos = 280;
-	for (int i = 0; i < 24; ++i)
-	{
-		driver_->draw2DRectangle(SColor(255, 80, 80, 80),rect<s32>(boxHorzPos,boxVertPos, boxHorzPos+clueBoxSize, boxVertPos+clueBoxSize));
-		boxHorzPos = (boxHorzPos+clueBoxSize) + clueBoxSpace;
-
-		if (boxHorzPos > menuWidth)
-		{
-			boxHorzPos = 280;
-			boxVertPos = (boxVertPos+clueBoxSize) + clueBoxSpace;
-		}
-	}
-
-	ITexture* invTitle = driver_->getTexture("bill/inv.png");
-	driver_->draw2DImage(invTitle,position2d<s32>(290,60),rect<s32>(0,0,303,72),NULL,SColor(255,255,255,255), true);
-
-	ITexture* character = driver_->getTexture("bill/unknown.jpg");
-	driver_->draw2DImage(character,position2d<s32>(80,80),rect<s32>(0,0,180,150),NULL,SColor(255,255,255,255), true);
-
-	gui::IGUIFont* font = device_->getGUIEnvironment()->getFont("bill/bigfont.png");
-	font->draw("Unknown", rect<s32>(80,230, 180,250), SColor(255, 255, 255, 200));
-
+	if (inventoryScreen_)
+		inventoryScreen_->draw();
 	device_->getCursorControl()->setVisible(true);
-	device_->getCursorControl()->setPosition(device_->getCursorControl()->getPosition());
 }
 
 void consoleevent::playerNpcCollisionCheck()
@@ -541,7 +509,7 @@ void consoleevent::addClueObject(ClueObject* object)
 	if(object->getObjectType() == TYPE_CLUE)
 	{
 		irr::core::string<char> nameEdit = object->getModel()->getName();
-		nameEdit += clueObjects_.size();
+		nameEdit += (unsigned int)clueObjects_.size();
 		object->getModel()->setName(nameEdit);
 
 		clueObjects_.push_back(object);

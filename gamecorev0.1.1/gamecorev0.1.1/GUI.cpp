@@ -7,6 +7,9 @@
 /************************************************************************/
 
 #include "GUI.h"
+#ifdef __linux__
+#include <sys/sysinfo.h>
+#endif
 
 using namespace irr;
 using namespace core;
@@ -47,7 +50,7 @@ void GUI::drawHealth(IGUIFont* font, player* thePlayer)
 	else color = blue;
 
 	device_->getVideoDriver()->draw2DRectangle(SColor(150,0,0,0), rect<s32>(290,530, 560,570));
-	device_->getVideoDriver()->draw2DRectangle(color, rect<s32>(300,540, 350+(thePlayer->getHealth()*2),560));
+	device_->getVideoDriver()->draw2DRectangle(color, rect<s32>(300,540, 300+core::clamp(thePlayer->getHealth(),0,100)*5/2,560));
 }
 void GUI::drawDebug(IGUIFont* font,IVideoDriver* driver,vector3df nodePosition)
 {
@@ -56,12 +59,20 @@ void GUI::drawDebug(IGUIFont* font,IVideoDriver* driver,vector3df nodePosition)
 	int pDrawn = driver->getPrimitiveCountDrawn();
 
 
+#ifdef _WIN32
 	MEMORYSTATUSEX memInfo;
 	memInfo.dwLength = sizeof(MEMORYSTATUSEX);
 	GlobalMemoryStatusEx(&memInfo);
-	DWORDLONG totalVirtualMem = memInfo.ullTotalPageFile;
 	DWORDLONG virtualMemUsed = memInfo.ullTotalPageFile - memInfo.ullAvailPageFile;
-	DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
+#elif defined(__linux__)
+	struct sysinfo memInfo;
+	sysinfo(&memInfo);
+	unsigned long long virtualMemUsed =
+		((unsigned long long)memInfo.totalram + memInfo.totalswap
+		 - memInfo.freeram - memInfo.freeswap) * memInfo.mem_unit;
+#else
+	unsigned long long virtualMemUsed = 0;
+#endif
 
 	//PROCESS_MEMORY_COUNTERS_EX pmc;
 	//GetProcessMemoryInfo(GetCurrentProcess(),&pmc, sizeof(pmc));
@@ -87,7 +98,8 @@ void GUI::drawDebug(IGUIFont* font,IVideoDriver* driver,vector3df nodePosition)
 	fpsstr+=driver->getVendorInfo();//get card vendor info
 	fpsstr+="\n Card:";
 	//fpsstr+=driver->getVendorInfo();
-	fpsstr+=glGetString(GL_RENDERER);//get graphics card name
+	if (driver->getDriverType() == EDT_OPENGL)
+		fpsstr+=glGetString(GL_RENDERER);//get graphics card name
 
 	fpsstr+="\n Driver:";
 	fpsstr+= driver->getName();

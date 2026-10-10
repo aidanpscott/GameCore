@@ -64,13 +64,13 @@ public:
 
 
 	void setTexture    (const char* filename)     {characterModel_->setMaterialTexture(0,driver_->getTexture(filename));}
-	void setposition   (irr::core::vector3df pos) { character_->warp(pos); }//set the player at the correct pos
-	void setGravity    (irr::f32 newGravity)      {character_->setGravity(newGravity);}
+	void setposition   (irr::core::vector3df pos) { if (character_) character_->warp(pos); }//set the player at the correct pos
+	void setGravity    (irr::f32 newGravity)      { if (character_) character_->setGravity(newGravity); }
 	void setSpeed      (float newSpeed)           {playerSpeed_ = newSpeed;}
 	void setXDir       (irr::f32 dir)             { xDirection_ = dir; }
 	void setZDir       (irr::f32 dir)             { zDirection_ = dir; }
 	void setChatMessage(char* message)            { chat_message_ = message;}
-	void setCamDist    (float increment)          {cameradist_+= increment;}
+	void setCamDist    (float increment)          {cameradist_ = irr::core::clamp(cameradist_ + increment, 5.0f, 50.0f);}
 	void setlamp       (bool ison)                {lamp_->setVisible(ison);}
 	void setHealth     (int newHealth)            {playerHealth_ = newHealth;}
 	void setHunger     (int newHunger)            {playerHunger_ = newHunger;}
@@ -81,7 +81,7 @@ public:
 
 	const irr::f32 getXDir () const		{ return xDirection_; }
 	const irr::f32 getZDir () const		{ return zDirection_; }
-	bool isOnGround        ()           { return character_->isOnGround();  }
+	bool isOnGround        ()           { return character_ && character_->isOnGround();  }
 	bool isEnemyInRange	   ()			{ return enemyInRange_; }
 	bool enemyNPCInRange   ()			{ return enemyNPCInRange_; }
 	bool enemyPlayerInRange()			{ return enemyPlayerInRange_; }
