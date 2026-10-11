@@ -10,9 +10,9 @@
 
 ChatQueue::ChatQueue(IrrlichtDevice * device,
 					 const core::rect<s32> drawArea,float textLife,
-					 bool setFade, float fadeTime, bool setShadows, bool debug, bool isDrawn):
-					ChatQueue_device(device),ChatQueue_life(textLife)
-					,ChatQueue_fade(setFade),ChatQueue_fadeTime(fadeTime),ChatQueue_debug(debug),ChatQueue_visible(isDrawn)
+					 bool setFade, float fadeTime, bool, bool debug, bool isDrawn):
+					ChatQueue_device(device),ChatQueue_fade(setFade)
+					,ChatQueue_visible(isDrawn),ChatQueue_debug(debug),ChatQueue_fadeTime(fadeTime),ChatQueue_life(textLife)
 {
 	//init the chat queue
 	m_fontHeight = 0;
@@ -49,7 +49,7 @@ void ChatQueue::addMessage(const wchar_t* text, SColor chatColor, SColor chatCol
 	lmsg.chatColorShadow = chatColorShadow;
 	lmsg.fade = 0;
 	lmsg.ChatQueue_memoryManaged = false;
-	lmsg.created = ChatQueue_device->getTimer()->getTime();
+	lmsg.created = (float)ChatQueue_device->getTimer()->getTime();
 	ChatQueue_list.push_front(lmsg);
 }
 
@@ -80,7 +80,7 @@ void ChatQueue::draw()
 				{
 					if(iter->fade == 0)
 					{
-						iter->fade = l_time;
+						iter->fade = (float)l_time;
 						iter->chatColorFade = iter->chatColor;
 						iter->chatColorShadowFade = iter->chatColorShadow;
 					}
@@ -129,15 +129,15 @@ void ChatQueue::ChatQueue_calculateRect(const core::rect<s32> drawArea)
 	m_x = l_positionTmp.X;  
 }
 
-void ChatQueue::ChatQueue_calculateFontHeight(irr::gui::IGUIFont* font)
+void ChatQueue::ChatQueue_calculateFontHeight(irr::gui::IGUIFont*)
 {
 	dimension2d<u32> l_fontHeight = ChatQueue_font->getDimension(L"|");
-	m_fontHeight = l_fontHeight.Height;   
+	m_fontHeight = (unsigned short)l_fontHeight.Height;   
 }
 
 void ChatQueue::ChatQueue_calculateMaxLines()
 {
-	ChatQueue_maxLines = ((m_yHeight - m_fontHeight) / m_fontHeight);     
+	ChatQueue_maxLines = (unsigned short)((m_yHeight - m_fontHeight) / m_fontHeight);     
 }
 
 //!-- End Helpers

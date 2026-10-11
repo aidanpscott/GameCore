@@ -61,7 +61,9 @@ using namespace RakNet;
 #undef WIN32_LEAN_AND_MEAN
 #endif
 
+#ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
+#endif
 #ifdef _IRR_WINDOWS_
 #pragma comment(lib, "Irrlicht.lib")
 #pragma comment(lib, "irrKlang.lib")
@@ -102,7 +104,7 @@ static void addStartingItems(inventory::Inventory& backpack)
 int main(void)
 {
 	//seed the random time
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	//read in our config file
 	Config_Reader config_reader("config/configure.txt");
 	
@@ -151,7 +153,7 @@ int main(void)
 
 	theGui.drawloading(driver,guienv);//load gui and display loading while the computer is working
 	
-	driver->setFog(SColor(0,255,255,255),EFT_FOG_EXP2,200,400,.001,true,false);	
+	driver->setFog(SColor(0,255,255,255),EFT_FOG_EXP2,200,400,.001f,true,false);	
 
 	//Loading map now handled in its own class
 	mapLoader currentMap(device,driver,smgr,world);
@@ -190,7 +192,7 @@ int main(void)
 		: InventoryScreen(device, itemProblem);
 	crecv.setInventoryScreen(&inventoryScreen);
 
-	gui::IGUIFont* font2 = device->getGUIEnvironment()->getFont("bill/bigfont.png");
+	device->getGUIEnvironment()->getFont("bill/bigfont.png");
 
 	currentMap.loadMap();
 	//thePlayer.setUpCameraCollisions();
@@ -202,7 +204,7 @@ int main(void)
 
 	u32 then = device->getTimer()->getTime();
 
-	ISound* intro = engine->play2D("sounds/discovery.mp3", true);	
+	engine->play2D("sounds/discovery.mp3", true);	
 
 	
 	//clear the console before the game starts

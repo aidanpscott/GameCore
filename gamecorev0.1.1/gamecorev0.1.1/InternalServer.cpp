@@ -34,12 +34,11 @@
 using namespace RakNet;
 using namespace std;
 
-InternalServer::InternalServer(bool online,irr::IrrlichtDevice* device,char* filename,
+InternalServer::InternalServer(bool online,irr::IrrlichtDevice* device,const char* filename,
 							   irr::scene::ISceneManager* smgr,irr::video::IVideoDriver* driver,
 							   irrklang::ISoundEngine* engine, irrBulletWorld* world, char* ip,
 							   int remote_port, int local_port,ChatQueue* message_buffer, 
 							   player* thePlayer): online_(online),
-							   device_(device),smgr_(smgr),driver_(driver), engine_(engine), world_(world),
 							   networkData_(device,filename,smgr,driver,engine,world, message_buffer, thePlayer),
 							   message_buffer_(message_buffer)
 {
@@ -67,7 +66,7 @@ InternalServer::InternalServer(bool online,irr::IrrlichtDevice* device,char* fil
 		client_=RakNet::RakPeerInterface::GetInstance();
 		// Connecting the client is very simple.  0 means we don't care about
 		// a connectionValidationInteger, and false for low priority threads
-		SocketDescriptor socketDescriptor(local_port,0);
+		SocketDescriptor socketDescriptor((unsigned short)local_port,0);
 		socketDescriptor.socketFamily=AF_INET;
 
 		// Record the first client that connects to us so we can pass it to the ping function
@@ -89,7 +88,7 @@ InternalServer::InternalServer(bool online,irr::IrrlichtDevice* device,char* fil
 			client_->SetOccasionalPing(true);
 
 			//start the connection
-			RakNet::ConnectionAttemptResult car = client_->Connect(ip_, remote_port, "0", (int) strlen("0"));
+			RakNet::ConnectionAttemptResult car = client_->Connect(ip_, (unsigned short)remote_port, "0", (int) strlen("0"));
 			bool b = (car==RakNet::CONNECTION_ATTEMPT_STARTED);
 
 			if (b)
@@ -109,13 +108,12 @@ InternalServer::InternalServer(bool online,irr::IrrlichtDevice* device,char* fil
 InternalServer::~InternalServer(void)
 {
 }
-void InternalServer::messageLoop(player& thePlayer, GUI& GUI,irr::gui::IGUIFont* font)
+void InternalServer::messageLoop(player& thePlayer, GUI&,irr::gui::IGUIFont*)
 {
 	
 	if (online_ == true)//if the online parameter is set maybe we will have a user set this
 	{
 
-		RakNet::SystemAddress clientID=RakNet::UNASSIGNED_SYSTEM_ADDRESS;
 
 		// message is the data to send
 		// strlen(message)+1 is to send the null terminator
@@ -143,11 +141,11 @@ void InternalServer::messageLoop(player& thePlayer, GUI& GUI,irr::gui::IGUIFont*
 		std::vector<remotePlayer> damagedPlayers = networkData_.findDamagedPlayers();
 		if (!damagedPlayers.empty())
 		{
-			for (int i = 0; i < damagedPlayers.size(); ++i)
+			for (size_t i = 0; i < damagedPlayers.size(); ++i)
 			{
 				std::string damageMsg = "3 ";
 				damageMsg += damagedPlayers[i].getName();
-				client_->Send(damageMsg.c_str(), damageMsg.length() + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+				client_->Send(damageMsg.c_str(), (int)damageMsg.length() + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 			}
 		}
 		
@@ -155,7 +153,7 @@ void InternalServer::messageLoop(player& thePlayer, GUI& GUI,irr::gui::IGUIFont*
 		{
 			std::string damageMsg = "4 ";
 			damageMsg += thePlayer.getname();
-			client_->Send(damageMsg.c_str(), damageMsg.length() + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+			client_->Send(damageMsg.c_str(), (int)damageMsg.length() + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 			thePlayer.setState(SPECTATOR);		
 		}
 
@@ -163,7 +161,7 @@ void InternalServer::messageLoop(player& thePlayer, GUI& GUI,irr::gui::IGUIFont*
 
 		if(!emptyMess(thePlayer.getChatMessage())) //if we have more than just the messageID aka its empty send
 		{
-			client_->Send(myMessage.c_str(), myMessage.length() + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+			client_->Send(myMessage.c_str(), (int)myMessage.length() + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 			thePlayer.setChatMessage("\0");
 			message_buffer_->addMessage(buffered_message.c_str());
 		}
@@ -293,7 +291,7 @@ void InternalServer::messageLoop(player& thePlayer, GUI& GUI,irr::gui::IGUIFont*
 	//}
 }
 
-bool InternalServer::emptyMess(char* message)
+bool InternalServer::emptyMess(const char* message)
 {	
 	int length=0;
 	while(*message!= '\0')
@@ -309,7 +307,7 @@ void InternalServer::shutdown(player& thePlayer)
 	// Be nice and let the server know we quit
 	std::string quit_message ="99 ";
 	quit_message += thePlayer.getname();
-	client_->Send(quit_message.c_str(), quit_message.length() + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
+	client_->Send(quit_message.c_str(), (int)quit_message.length() + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 	client_->Shutdown(300);
 	RakNet::RakPeerInterface::DestroyInstance(client_);
 	puts("Shutting Down Internal Server");

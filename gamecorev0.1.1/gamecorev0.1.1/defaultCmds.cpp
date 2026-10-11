@@ -12,7 +12,7 @@ IC_Command_ECHO::IC_Command_ECHO() : IC_Command(L"echo")
 IC_Command_ECHO::~IC_Command_ECHO()
 {
 }
-bool IC_Command_ECHO::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_ECHO::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink* pOutput)
 {
 	if(args.size() > 1)
 	{
@@ -99,11 +99,10 @@ IC_Command_DRIVER_INFO::~IC_Command_DRIVER_INFO()
 {
 	device = 0;
 }
-bool IC_Command_DRIVER_INFO::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_DRIVER_INFO::invoke(const array<WideString>&, IC_Dispatcher*, IC_MessageSink* pOutput)
 {
 	if(device)
 	{
-		irr::video::IVideoDriver* driver = device->getVideoDriver();
 		WideString wstr = L" Irrlicht Version : ";
 		wstr+= device->getVersion();
 		pOutput->appendMessage(wstr);
@@ -132,7 +131,7 @@ IC_Command_EXIT::IC_Command_EXIT() : IC_Command(L"exit")
 IC_Command_EXIT::~IC_Command_EXIT()
 {
 }
-bool IC_Command_EXIT::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_EXIT::invoke(const array<WideString>&, IC_Dispatcher*, IC_MessageSink* pOutput)
 {
 	pOutput->toggleVisible();
 	return true;
@@ -146,7 +145,7 @@ IC_Command_QUIT::IC_Command_QUIT() : IC_Command(L"quit")
 IC_Command_QUIT::~IC_Command_QUIT()
 {
 }
-bool IC_Command_QUIT::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_QUIT::invoke(const array<WideString>&, IC_Dispatcher*, IC_MessageSink* pOutput)
 {
 	pOutput->toggleVisible();
 	return true;
@@ -161,7 +160,7 @@ IC_Command_CLS::IC_Command_CLS() : IC_Command(L"cls")
 IC_Command_CLS::~IC_Command_CLS()
 {
 }
-bool IC_Command_CLS::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_CLS::invoke(const array<WideString>&, IC_Dispatcher*, IC_MessageSink* pOutput)
 {
 	//if we are compiling with windows clear the console
     #ifdef _WINDOWS_
@@ -187,7 +186,7 @@ IC_Command_TP::~IC_Command_TP()
 }
 
 //warp the player to a specified XYZ Coord
-bool IC_Command_TP::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_TP::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 	//if we have the right amount of arguments
 	if(args.size() == DEFAULT_ARGS )
@@ -201,7 +200,7 @@ bool IC_Command_TP::invoke(const array<WideString>& args, IC_Dispatcher* pDispat
 		
 		//handle 
 		//warp the player
-		thePlayer_->setposition(irr::core::vector3df(posx,posy,posz));
+		thePlayer_->setposition(irr::core::vector3df((f32)posx,(f32)posy,(f32)posz));
 		
 		return true;
 	}
@@ -224,7 +223,7 @@ IC_Command_RB::~IC_Command_RB()
 }
 
 //Add a rigid body into the world for testing
-bool IC_Command_RB::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_RB::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 
 	if(args.size() == 2)
@@ -233,7 +232,7 @@ bool IC_Command_RB::invoke(const array<WideString>& args, IC_Dispatcher* pDispat
 		const wchar_t* scale = args[1].c_str();
 		ICollisionShape* shape;
 		node = device_->getSceneManager()->addMeshSceneNode(device_->getSceneManager()->getMesh(args[0]));
-		node->setScale(vector3df(_wtof(scale),_wtof(scale),_wtof(scale)));
+		node->setScale(vector3df((f32)_wtof(scale),(f32)_wtof(scale),(f32)_wtof(scale)));
 		node->setPosition(vector3df(player_->getPosition().X-10,player_->getPosition().Y,player_->getPosition().Z-10));
 		//gpu intensive//////////////////
 		node->addShadowVolumeSceneNode();
@@ -266,11 +265,11 @@ IC_Command_GV::IC_Command_GV(irrBulletWorld* world) : IC_Command(L"gv")
 IC_Command_GV::~IC_Command_GV()
 {
 }
-bool IC_Command_GV::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_GV::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 	if (args.size()==1)
 	{
-		world_->setGravity(vector3df(0,_wtof(args[0].c_str()),0));
+		world_->setGravity(vector3df(0,(f32)_wtof(args[0].c_str()),0));
 	}
 	else
 		throw IC_Error(L"Missing Argument! <Gravity>");
@@ -291,11 +290,11 @@ IC_Command_PGV::~IC_Command_PGV()
 //////////////////////////////////////////////////////////////////////////
 //set the players gravity ALPHA State
 //////////////////////////////////////////////////////////////////////////
-bool IC_Command_PGV::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_PGV::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 	if (args.size()==1)
 	{
-		thePlayer_->setGravity(_wtof(args[0].c_str()));
+		thePlayer_->setGravity((f32)_wtof(args[0].c_str()));
 	}
 	else
 		throw IC_Error(L"Missing Argument! <Player Gravity>");
@@ -316,13 +315,13 @@ IC_Command_SAY::~IC_Command_SAY()
 //////////////////////////////////////////////////////////////////////////
 //set the players chat message
 //////////////////////////////////////////////////////////////////////////
-bool IC_Command_SAY::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_SAY::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 	if (args.size()>=1)
 	{
 		//copy all args to alleviate having to put "" around the message
 		core::stringw message;	
-		for(int i = 0;i < args.size();++i)
+		for(u32 i = 0;i < args.size();++i)
 		{
 			message+= args[i];
 			message +=" ";
@@ -356,13 +355,13 @@ IC_Command_C::~IC_Command_C()
 //////////////////////////////////////////////////////////////////////////
 //simple chat message
 //////////////////////////////////////////////////////////////////////////
-bool IC_Command_C::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_C::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 	if (args.size()>=1)
 	{
 		//copy all args to alleviate having to put "" around the message
 		core::stringw message;	
-		for(int i = 0;i < args.size();++i)
+		for(u32 i = 0;i < args.size();++i)
 		{
 			message+= args[i];
 			message +=" ";
@@ -398,7 +397,7 @@ IC_Command_P_SPEED::~IC_Command_P_SPEED()
 }
 
 //change the player speed for debugging
-bool IC_Command_P_SPEED::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_P_SPEED::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 	//if we have the right amount of arguments
 	if(args.size() == 1)
@@ -406,7 +405,7 @@ bool IC_Command_P_SPEED::invoke(const array<WideString>& args, IC_Dispatcher* pD
 		//arguments
 		const wchar_t* arg = args[0].c_str();
 		//conversion to float speed
-		float speed=_wtof(arg);
+		float speed=(float)_wtof(arg);
 
 		//handle 
 		thePlayer_->setSpeed(speed);
@@ -431,7 +430,7 @@ IC_Command_PH::~IC_Command_PH()
 }
 
 //change the player speed for debugging
-bool IC_Command_PH::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_PH::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 	//if we have the right amount of arguments
 	if(args.size() == 1)
@@ -439,10 +438,10 @@ bool IC_Command_PH::invoke(const array<WideString>& args, IC_Dispatcher* pDispat
 		//arguments
 		const wchar_t* arg = args[0].c_str();
 		//conversion to float speed
-		float health=_wtof(arg);
+		float health=(float)_wtof(arg);
 
 		//handle 
-		thePlayer_->setHealth(health);
+		thePlayer_->setHealth((int)health);
 
 		return true;
 	}
@@ -463,13 +462,12 @@ IC_Command_LM::~IC_Command_LM()
 {
 }
 
-bool IC_Command_LM::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_LM::invoke(const array<WideString>& args, IC_Dispatcher*, IC_MessageSink*)
 {
 	//if we have the right amount of arguments
 	if(args.size() == 1)
 	{
 		//arguments
-		const wchar_t* arg = args[0].c_str();
 		if (args.size()==1)
 		{
 			std::string newMap;
@@ -506,7 +504,7 @@ IC_Command_H::~IC_Command_H()
 }
 
 //change the player speed for debugging
-bool IC_Command_H::invoke(const array<WideString>& args, IC_Dispatcher* pDispatcher, IC_MessageSink* pOutput)
+bool IC_Command_H::invoke(const array<WideString>&, IC_Dispatcher*, IC_MessageSink*)
 {
 	thePlayer_->damage();
 	return true;
